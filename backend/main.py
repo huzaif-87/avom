@@ -47,8 +47,8 @@ def create_application() -> FastAPI:
     # Configure CORS for local React frontend and deployed production frontends
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if settings.ENVIRONMENT == "production" else settings.CORS_ORIGINS,
-        allow_origin_regex=r"https://.*\.vercel\.app" if settings.ENVIRONMENT == "production" else None,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
