@@ -1,14 +1,24 @@
 """Main application entry point for TalentRank AI backend."""
 
+import os
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Optimize PyTorch CPU execution for containerized cloud environments (e.g. Render 512MB RAM)
+try:
+    import torch
+    torch.set_num_threads(2)
+    torch.set_num_interop_threads(1)
+except Exception:
+    pass
+
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.errors import register_error_handlers
 from app.core.database import connect_to_mongo, close_mongo_connection
+
 
 
 @asynccontextmanager
@@ -34,10 +44,11 @@ def create_application() -> FastAPI:
     )
 
 
-    # Configure CORS for local React frontend
+    # Configure CORS for local React frontend and deployed production frontends
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=["*"] if settings.ENVIRONMENT == "production" else settings.CORS_ORIGINS,
+        allow_origin_regex=r"https://.*\.vercel\.app" if settings.ENVIRONMENT == "production" else None,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

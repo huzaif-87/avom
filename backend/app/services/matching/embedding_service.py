@@ -44,7 +44,7 @@ def get_embedding_model() -> Tuple[Optional[object], str]:
         if _active_model is not None and _active_model_name is not None:
             return _active_model, _active_model_name
 
-        # Try SentenceTransformer candidates in fallback order
+        # Try SentenceTransformer candidates in fallback order with lightweight memory footprint
         for candidate_name in MODEL_FALLBACK_CANDIDATES:
             try:
                 logger.info(f"Attempting to load SentenceTransformer model '{candidate_name}'...")
@@ -54,6 +54,13 @@ def get_embedding_model() -> Tuple[Optional[object], str]:
                     loaded = SentenceTransformer(candidate_name, local_files_only=True)
                 except Exception:
                     loaded = SentenceTransformer(candidate_name)
+
+                # Set evaluation mode to reduce memory allocations
+                try:
+                    if hasattr(loaded, "eval"):
+                        loaded.eval()
+                except Exception:
+                    pass
 
                 _active_model = loaded
                 _active_model_name = candidate_name
@@ -71,6 +78,7 @@ def get_embedding_model() -> Tuple[Optional[object], str]:
         _active_model = None
         _active_model_name = "tfidf-fallback-vectorizer"
         return _active_model, _active_model_name
+
 
 
 def _compute_tfidf_embeddings(texts: List[str]) -> np.ndarray:
