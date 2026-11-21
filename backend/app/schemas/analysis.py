@@ -44,7 +44,7 @@ class PersistentCandidateSchema(BaseModel):
     warnings: List[str] = []
 
     # AI Match & Ranking results
-    overall_match_score: Optional[int] = None
+    overall_match_score: Optional[float] = None
     semantic_similarity: Optional[float] = None
     rank: Optional[int] = None
     matched_required_skills: List[str] = []
@@ -67,9 +67,9 @@ class SaveAnalysisRequest(BaseModel):
 
     analysis_id: Optional[str] = None
     job_title: Optional[str] = None
-    jd_text: str = Field(..., min_length=10, description="Full job description text")
-    jd_analysis: Dict[str, Any] = Field(..., description="Structured job criteria extracted from JD")
-    candidates: List[Dict[str, Any]] = Field(default=[], description="Parsed and matched candidate profiles")
+    jd_text: str = Field(default="", description="Full job description text")
+    jd_analysis: Dict[str, Any] = Field(default_factory=dict, description="Structured job criteria extracted from JD")
+    candidates: List[Dict[str, Any]] = Field(default_factory=list, description="Parsed and matched candidate profiles")
     ai_matching_results: Optional[Dict[str, Any]] = Field(default=None, description="Complete AI match engine output")
 
 
@@ -85,7 +85,7 @@ class JobAnalysisSummaryResponse(BaseModel):
     maybe_count: int = 0
     rejected_count: int = 0
     unreviewed_count: int = 0
-    average_match_score: Optional[int] = None
+    average_match_score: Optional[float] = None
     created_at: str
     updated_at: str
 
@@ -105,6 +105,6 @@ class JobAnalysisDetailResponse(BaseModel):
     maybe_count: int = 0
     rejected_count: int = 0
     unreviewed_count: int = 0
-    average_match_score: Optional[int] = None
+    average_match_score: Optional[float] = None
     created_at: str
     updated_at: str

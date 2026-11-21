@@ -231,11 +231,10 @@ export default function NewAnalysisPage({
   };
 
   // Persist / Save to Recruiter Workspace in MongoDB
-  const handleSaveToWorkspace = async () => {
-    if (!jdData?.analyzedData && !jdText.trim()) {
-      setSaveErrorNotice('A job description is required to save an analysis.');
-      return;
-    }
+  const handleSaveToWorkspace = async (customAiResults = null) => {
+    const textToSave = jdText?.trim() || jdData?.text || (typeof jdData === 'string' ? jdData : '') || 'Target Position Assessment';
+    const analysisToSave = jdData?.analyzedData || { summary: textToSave.slice(0, 100) };
+    const matchingToSave = customAiResults || aiMatchResults || undefined;
 
     setIsSaving(true);
     setSaveSuccessNotice(null);
@@ -244,11 +243,11 @@ export default function NewAnalysisPage({
     try {
       const payload = {
         analysis_id: activeAnalysisId || undefined,
-        job_title: jdData?.analyzedData?.summary?.slice(0, 50) || 'Target Role Assessment',
-        jd_text: jdText,
-        jd_analysis: jdData?.analyzedData || { summary: jdText.slice(0, 100) },
+        job_title: analysisToSave?.summary?.slice(0, 50) || textToSave.split('\n')[0].slice(0, 50) || 'Target Role Assessment',
+        jd_text: textToSave,
+        jd_analysis: analysisToSave,
         candidates: parsedCandidates,
-        ai_matching_results: aiMatchResults || undefined,
+        ai_matching_results: matchingToSave,
       };
 
       const saved = await saveJobAnalysis(payload);
@@ -259,6 +258,7 @@ export default function NewAnalysisPage({
       setSaveSuccessNotice('Analysis and candidates saved to persistent recruiter workspace!');
       setTimeout(() => setSaveSuccessNotice(null), 4000);
     } catch (err) {
+      console.error('Failed to save analysis to workspace:', err);
       setSaveErrorNotice(err.message || 'Failed to save analysis');
     } finally {
       setIsSaving(false);
@@ -267,8 +267,8 @@ export default function NewAnalysisPage({
 
   // Auto-save whenever AI matching completes with candidates
   useEffect(() => {
-    if (aiMatchResults?.ranked_candidates?.length > 0 && jdData?.analyzedData) {
-      handleSaveToWorkspace();
+    if (aiMatchResults?.ranked_candidates?.length > 0) {
+      handleSaveToWorkspace(aiMatchResults);
     }
   }, [aiMatchResults]);
 
@@ -312,6 +312,8 @@ export default function NewAnalysisPage({
         candidates: parsedCandidates,
       });
       onUpdateAiMatchResults(result);
+      // Immediately save matching evaluation into persistent workspace
+      handleSaveToWorkspace(result);
     } catch (err) {
       setAiMatchError(err.message || 'Failed to execute AI matching evaluation.');
     } finally {
@@ -407,10 +409,10 @@ export default function NewAnalysisPage({
         </div>
 
         <div className="flex items-center gap-2">
-          {hasParsedResumes && (
+          {(hasParsedResumes || hasAnalyzedJD || jdText.trim().length > 0) && (
             <button
               type="button"
-              onClick={handleSaveToWorkspace}
+              onClick={() => handleSaveToWorkspace()}
               disabled={isSaving}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-olive hover:bg-olive-dark transition-colors shadow-2xs cursor-pointer"
               title="Save to Recruiter MongoDB Workspace"

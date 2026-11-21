@@ -49,8 +49,11 @@ async def save_analysis(
     job_title = payload.job_title
     if not job_title:
         # Infer title from JD text first line or analysis summary
-        first_line = payload.jd_text.strip().split("\n")[0].strip()
-        job_title = first_line[:60] if len(first_line) > 3 else "Target Position"
+        raw_text = (payload.jd_text or "").strip()
+        first_line = raw_text.split("\n")[0].strip() if raw_text else ""
+        job_title = first_line[:60] if len(first_line) > 3 else (payload.jd_analysis.get("summary", "")[:60] if payload.jd_analysis else "Target Position")
+        if not job_title:
+            job_title = "Target Position"
 
     # Map candidate profiles
     saved_candidates = []
@@ -129,7 +132,7 @@ async def save_analysis(
         )
         saved_candidates.append(PersistentCandidateSchema(**cand_doc))
 
-    avg_score = round(sum(scores) / len(scores)) if scores else None
+    avg_score = round(float(sum(scores) / len(scores)), 1) if scores else None
 
     analysis_doc = {
         "id": analysis_id,
