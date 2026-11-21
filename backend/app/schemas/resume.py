@@ -1,17 +1,30 @@
 """Pydantic schemas for resume parsing, candidate information, and storage."""
 
+import uuid
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class CandidateResumeResult(BaseModel):
     """Structured extraction result for a single candidate resume."""
 
-    candidate_id: str = Field(..., description="Unique generated identifier for candidate")
-    filename: str = Field(..., description="Original filename of uploaded resume")
+    candidate_id: str = Field(default="", description="Unique generated identifier for candidate")
+    filename: str = Field(default="resume.pdf", description="Original filename of uploaded resume")
     file_type: str = Field(default="pdf", description="Document file extension: 'pdf' or 'docx'")
     page_count: Optional[int] = Field(default=None, description="Total page count of document")
     has_original_file: bool = Field(default=True, description="Whether original file is stored for preview/download")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_candidate_fields(cls, data):
+        if isinstance(data, dict):
+            cid = data.get("candidate_id") or data.get("id")
+            if not cid:
+                cid = f"cand_{uuid.uuid4().hex[:8]}"
+            data["candidate_id"] = str(cid)
+            if not data.get("filename"):
+                data["filename"] = "resume.pdf"
+        return data
 
     # Candidate Contact Information
     name: str = Field(default="Unknown", description="Extracted candidate full name")
