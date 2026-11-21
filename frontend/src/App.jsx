@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import {
   checkBackendHealth,
   getAnalysisById,
+  listSavedAnalyses,
   updateCandidateDecisionStatus,
 } from './services/api';
 import { Loader2 } from 'lucide-react';
@@ -73,6 +74,60 @@ function MainApp() {
     return () => clearInterval(interval);
   }, [fetchHealth]);
 
+  // Automatically restore recruiter's latest analysis on page reload or login
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let isMounted = true;
+    const restoreLastSession = async () => {
+      try {
+        const lastId = localStorage.getItem('talentrank_last_analysis_id');
+        if (lastId) {
+          try {
+            const data = await getAnalysisById(lastId);
+            if (isMounted && data) {
+              setActiveAnalysisId(data.id);
+              setActiveAnalysisTitle(data.job_title);
+              setJdData({
+                text: data.jd_text,
+                analyzedData: data.jd_analysis,
+              });
+              setParsedCandidates(data.candidates || []);
+              setAiMatchResults(data.ai_matching_results || null);
+              return;
+            }
+          } catch (e) {
+            console.warn('Could not restore last analysis by ID:', e);
+          }
+        }
+
+        // If no lastId or failed, restore latest analysis from recruiter's saved history
+        const list = await listSavedAnalyses();
+        if (isMounted && list && list.length > 0) {
+          const latest = await getAnalysisById(list[0].id);
+          if (isMounted && latest) {
+            setActiveAnalysisId(latest.id);
+            setActiveAnalysisTitle(latest.job_title);
+            localStorage.setItem('talentrank_last_analysis_id', latest.id);
+            setJdData({
+              text: latest.jd_text,
+              analyzedData: latest.jd_analysis,
+            });
+            setParsedCandidates(latest.candidates || []);
+            setAiMatchResults(latest.ai_matching_results || null);
+          }
+        }
+      } catch (err) {
+        console.warn('Auto-restore of saved analysis skipped:', err);
+      }
+    };
+
+    restoreLastSession();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
   const handleUpdateJDData = (data) => {
     setJdData(data);
     setAiMatchResults(null);
@@ -94,6 +149,7 @@ function MainApp() {
     setAiMatchError(null);
     setActiveAnalysisId(null);
     setActiveAnalysisTitle('');
+    localStorage.removeItem('talentrank_last_analysis_id');
   };
 
   const handleRemoveCandidate = (candidateId) => {
@@ -112,6 +168,7 @@ function MainApp() {
       const data = await getAnalysisById(analysisId);
       setActiveAnalysisId(data.id);
       setActiveAnalysisTitle(data.job_title);
+      localStorage.setItem('talentrank_last_analysis_id', data.id);
       setJdData({
         text: data.jd_text,
         analyzedData: data.jd_analysis,

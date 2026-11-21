@@ -255,6 +255,7 @@ export default function NewAnalysisPage({
       if (setActiveAnalysisId) {
         setActiveAnalysisId(saved.id);
       }
+      localStorage.setItem('talentrank_last_analysis_id', saved.id);
       setSaveSuccessNotice('Analysis and candidates saved to persistent recruiter workspace!');
       setTimeout(() => setSaveSuccessNotice(null), 4000);
     } catch (err) {

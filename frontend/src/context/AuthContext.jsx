@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
       console.warn('Session expired or invalid token:', err.message);
       localStorage.removeItem('talentrank_token');
       localStorage.removeItem('talentrank_recruiter');
+      localStorage.removeItem('talentrank_last_analysis_id');
       setToken(null);
       setRecruiter(null);
     } finally {
@@ -72,6 +73,7 @@ export function AuthProvider({ children }) {
     await logoutRecruiterApi();
     localStorage.removeItem('talentrank_token');
     localStorage.removeItem('talentrank_recruiter');
+    localStorage.removeItem('talentrank_last_analysis_id');
     setToken(null);
     setRecruiter(null);
   };
