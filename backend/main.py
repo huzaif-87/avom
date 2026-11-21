@@ -6,14 +6,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Optimize PyTorch CPU execution for containerized cloud environments (e.g. Render 512MB RAM)
-try:
-    import torch
-    torch.set_num_threads(2)
-    torch.set_num_interop_threads(1)
-except Exception:
-    pass
-
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.errors import register_error_handlers
