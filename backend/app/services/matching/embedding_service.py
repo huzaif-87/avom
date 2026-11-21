@@ -53,7 +53,13 @@ def get_embedding_model() -> Tuple[Optional[object], str]:
                 try:
                     loaded = SentenceTransformer(candidate_name, local_files_only=True)
                 except Exception:
-                    loaded = SentenceTransformer(candidate_name)
+                    import socket
+                    orig_timeout = socket.getdefaulttimeout()
+                    try:
+                        socket.setdefaulttimeout(12.0)
+                        loaded = SentenceTransformer(candidate_name)
+                    finally:
+                        socket.setdefaulttimeout(orig_timeout)
 
                 # Set evaluation mode to reduce memory allocations
                 try:

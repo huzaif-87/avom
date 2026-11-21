@@ -27,8 +27,8 @@ router = APIRouter()
     summary="Evaluate and rank candidates using AI Matching Engine",
     description="Calculates semantic similarity via Sentence Transformers (all-MiniLM-L6-v2), evaluates required/preferred skills, experience, and education, and stably ranks candidates from highest to lowest overall match score.",
 )
-async def evaluate_candidates(payload: MatchRequest):
-    """Evaluate and rank candidates against a job description."""
+def evaluate_candidates(payload: MatchRequest):
+    """Evaluate and rank candidates against a job description (executed in threadpool)."""
     if not payload.candidates:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
