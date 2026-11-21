@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
@@ -15,6 +15,16 @@ class RecruiterRegisterRequest(BaseModel):
     email: str = Field(..., description="Valid corporate or personal recruiter email")
     password: str = Field(..., min_length=8, max_length=128, description="Password (min 8 chars)")
     confirm_password: str = Field(..., min_length=8, max_length=128, description="Password confirmation")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_register_payload(cls, data):
+        if isinstance(data, dict):
+            if "full_name" not in data and "name" in data:
+                data["full_name"] = data["name"]
+            if "confirm_password" not in data and "password" in data:
+                data["confirm_password"] = data["password"]
+        return data
 
     @field_validator("email")
     @classmethod
