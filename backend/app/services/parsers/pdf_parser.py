@@ -6,17 +6,22 @@ import shutil
 import logging
 from typing import List, Optional, Tuple
 import fitz  # PyMuPDF
-from PIL import Image
 
-logger = logging.getLogger(__name__)
+# Check if PIL and pytesseract are available for optional OCR fallback
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    Image = None
+    PIL_AVAILABLE = False
 
-# Check if pytesseract is importable
 try:
     import pytesseract
     PYTESSERACT_AVAILABLE = True
 except ImportError:
     pytesseract = None
     PYTESSERACT_AVAILABLE = False
+
 
 
 def _find_tesseract_binary() -> Optional[str]:
@@ -105,7 +110,7 @@ def extract_text_from_pdf(
         if is_scanned_candidate:
             tess_bin = _find_tesseract_binary()
 
-            if PYTESSERACT_AVAILABLE and tess_bin:
+            if PYTESSERACT_AVAILABLE and PIL_AVAILABLE and tess_bin:
                 # Configure pytesseract binary path if needed
                 pytesseract.pytesseract.tesseract_cmd = tess_bin
                 ocr_attempted = True
@@ -132,7 +137,7 @@ def extract_text_from_pdf(
                     warnings.append(f"OCR execution encountered an error: {str(ocr_err)}")
 
             if not ocr_success:
-                if not PYTESSERACT_AVAILABLE or not tess_bin:
+                if not PYTESSERACT_AVAILABLE or not PIL_AVAILABLE or not tess_bin:
                     warnings.append(
                         "Document appears to be scanned or image-based (contains images with minimal extractable text). "
                         "OCR is required to read image text, but the local Tesseract OCR engine was not found on the host system. "
